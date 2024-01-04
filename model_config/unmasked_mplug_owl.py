@@ -221,3 +221,4 @@ class UnMaskedMplugOwlForTokenClassification(MplugOwlForTokenClassification):
         super(UnMaskedMplugOwlForTokenClassification, self).__init__(config, weight_loss, weight_flag)
         language_model = UnmaskingLlamaModel(config.text_config)
         self.language_model = language_model
+

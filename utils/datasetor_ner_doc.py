@@ -63,11 +63,11 @@ class DocNERDataset(Dataset):
         word_ids = torch.tensor([[-100 if element is None else element
                                  for element in output_tokenizer.word_ids()]]).to(self.device)
         label = torch.tensor([label + [-100] * (self.max_token_num - len(label))]).to(self.device)
-        output = {'pixel_values': image_features,
-                  'input_ids': output_tokenizer['input_ids'],
-                  'attention_mask': output_tokenizer['attention_mask'],
-                  'word_ids': word_ids,
-                  'label': label}
+        output = {'pixel_values': image_features.squeeze(0),
+                  'input_ids': output_tokenizer['input_ids'].squeeze(0),
+                  'attention_mask': output_tokenizer['attention_mask'].squeeze(0),
+                  'word_ids': word_ids.squeeze(0),
+                  'label': label.squeeze(0)}
         if self.half:
             output = {k: v.bfloat16() if v.dtype == torch.float else v for k, v in output.items()}
 

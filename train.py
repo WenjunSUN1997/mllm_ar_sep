@@ -3,8 +3,8 @@ from tqdm import tqdm
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from peft import get_peft_model, LoraConfig, TaskType
 import torch
-from model_config.masked_mplug_owl import MplugOwlForTokenClassification
 from model_config.unmasked_mplug_owl import UnMaskedMplugOwlForTokenClassification
+from model_config.masked_mplug_owl import MplugOwlForTokenClassification
 import argparse
 
 def train(config):
@@ -13,22 +13,17 @@ def train(config):
         dataloader_train = get_dataloader(config)
         config['goal'] = 'test'
         dataloader_test = get_dataloader(config)
-        if config['half']:
-            data_type = torch.bfloat16
-        else:
-            data_type = torch.float32
-
         if config['type'] == 'unmasked':
             model = UnMaskedMplugOwlForTokenClassification.from_pretrained(
                 config['model_name'],
-                torch_dtype=data_type,
+                torch_dtype=torch.bfloat16,
                 weight_loss=dataloader_train.dataset.weight,
                 weight_flag=config['weight'])
 
         if config['type'] == 'masked':
             model = MplugOwlForTokenClassification.from_pretrained(
                 config['model_name'],
-                torch_dtype=data_type,
+                torch_dtype=torch.bfloat16,
                 weight_loss=dataloader_train.dataset.weight,
                 weight_flag=config['weight'])
 
@@ -55,7 +50,7 @@ def train(config):
                                   factor=0.5,
                                   patience=1,
                                   verbose=True)
-    for epoch_index in epoch:
+    for epoch_index in range(epoch):
         for step, data in tqdm(enumerate(dataloader_train), total=len(dataloader_train)):
             output = model(**data)
             loss = output['loss']
