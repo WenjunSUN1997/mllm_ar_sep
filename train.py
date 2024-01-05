@@ -6,6 +6,9 @@ import torch
 from model_config.unmasked_mplug_owl import UnMaskedMplugOwlForTokenClassification
 from model_config.masked_mplug_owl import MplugOwlForTokenClassification
 import argparse
+from utils.validator import validate
+
+torch.manual_seed(3407)
 
 def train(config):
     if config['task'] == 'doc_ner':
@@ -44,6 +47,7 @@ def train(config):
     model.language_model = get_peft_model(model.language_model, peft_config)
     model.language_model.print_trainable_parameters()
     model.train()
+    loss_all = []
     optimizer = torch.optim.AdamW(model.parameters(), lr=config['lr'])
     scheduler = ReduceLROnPlateau(optimizer,
                                   mode='min',
@@ -54,9 +58,15 @@ def train(config):
         for step, data in tqdm(enumerate(dataloader_train), total=len(dataloader_train)):
             output = model(**data)
             loss = output['loss']
+            loss_all.append(loss.item())
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+        print(epoch_index)
+        print(sum(loss_all) / len(loss_all))
+        output_val = validate(config, model, dataloader_test)
+        scheduler.step(output_val['loss'])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
