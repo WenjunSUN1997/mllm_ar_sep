@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 from mplug_owl.processing_mplug_owl import MplugOwlImageProcessor, MplugOwlProcessor
-from mplug_owl.modeling_mplug_owl import MplugOwlForConditionalGeneration
+from mplug_owl.modeling_mplug_owl import MplugOwlForConditionalGeneration, MplugOwlModel
 import pandas as pd
 from model_config.unmasked_mplug_owl import UnMaskedMplugOwlForTokenClassification
 from model_config.masked_mplug_owl import MplugOwlForTokenClassification
@@ -81,21 +81,25 @@ def test():
               'goal': 'train',
               'max_token_num': 1024,
               'half': True,
-              'device': 'cuda:0',
+              'device': 'cpu',
               'sim_dim': 4096}
     datasetor = DocNERDataset(config)
     a = datasetor[0]
-
+    a = {k: v.unsqueeze(0) for k, v in a.items()}
+    #
     # image_processor = MplugOwlImageProcessor.from_pretrained('MAGAer13/mplug-owl-llama-7b')
     # tokenizer = AutoTokenizer.from_pretrained('MAGAer13/mplug-owl-llama-7b')
-    # processor = MplugOwlProcessor(image_processor, tokenizer)
+    # processor = MplugOwlProcessor(image_processor=image_processor, tokenizer=tokenizer)
     # generate_kwargs = {
     #     'do_sample': True,
     #     'top_k': 5,
     #     'max_length': 512
     # }
     # from PIL import Image
-    # images = [Image.open(_) for _ in ['18680715_1-0001.jpg']]
+    # import requests
+    # url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+    # images = [Image.open(requests.get(url, stream=True).raw)]
+    # # images = [Image.open(_) for _ in ['18680715_1-0001.jpg']]
     # prompts = [
     #     '''The following is a conversation between a curious human and AI assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
     #     Human: <image>
@@ -104,11 +108,15 @@ def test():
     # inputs = processor(text=prompts, images=images, return_tensors='pt')
     # inputs = {k: v.bfloat16() if v.dtype == torch.float else v for k, v in inputs.items()}
     # inputs = {k: v.to(config['device']) for k, v in inputs.items()}
-
+    #
     # model = MplugOwlForConditionalGeneration.from_pretrained(
     #     'MAGAer13/mplug-owl-llama-7b',
     #     torch_dtype=torch.bfloat16
     # )
+    # model.to(config['device'])
+    # a = model.generate(**inputs, **generate_kwargs)
+    # a = model(**inputs)
+    # print()
     peft_config = LoraConfig(inference_mode=False, r=12, lora_alpha=32,
                              lora_dropout=0.1)
     model = UnMaskedMplugOwlForTokenClassification.from_pretrained(

@@ -1,3 +1,5 @@
+import torch
+
 from mplug_owl.modeling_mplug_owl import *
 from transformers import AutoModel
 
@@ -38,12 +40,14 @@ class MplugOwlForTokenClassification(MplugOwlForConditionalGeneration):
             pixel_values = pixel_values.to(self.vision_model.embeddings.cls_token.data.dtype)
 
         if input_ids is None:
-            return self.language_model.generate(attention_mask=attention_mask, **generate_kwargs)
+            raise EOFError
 
         if attention_mask is None:
             attention_mask = input_ids.new_ones(*input_ids.shape)
 
         batch_size = input_ids.size(0)
+        pad_tensor = torch.tensor([-1]*65).to(input_ids.device).unsqueeze(0)
+        input_ids = torch.cat((input_ids, pad_tensor), dim=-1)
         media_token_indices = [get_media_indices(input_ids[i]) for i in range(batch_size)]
         num_images_per_sample = [len(x) for x in media_token_indices]
         input_ids = input_ids.clone()  # prevent inplace modify

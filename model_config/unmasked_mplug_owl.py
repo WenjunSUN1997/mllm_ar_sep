@@ -1,7 +1,7 @@
 from mplug_owl.modeling_mplug_owl import *
 from model_config.masked_mplug_owl import MplugOwlForTokenClassification
-
-class UnmaskingLlamaModel(LlamaPreTrainedModel):
+from transformers import LlamaModel
+class UnmaskingLlamaModel(LlamaModel):
     """
     Transformer decoder consisting of *config.num_hidden_layers* layers. Each layer is a [`LlamaDecoderLayer`]
 
@@ -10,17 +10,17 @@ class UnmaskingLlamaModel(LlamaPreTrainedModel):
     """
 
     def __init__(self, config: LlamaConfig):
-        super().__init__(config)
-        self.padding_idx = config.pad_token_id
-        self.vocab_size = config.vocab_size
-
-        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
-        self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
-        self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-
-        self.gradient_checkpointing = False
-        # Initialize weights and apply final processing
-        self.post_init()
+        super(UnmaskingLlamaModel, self).__init__(config)
+        # self.padding_idx = config.pad_token_id
+        # self.vocab_size = config.vocab_size
+        #
+        # self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
+        # self.layers = nn.ModuleList([LlamaDecoderLayer(config) for _ in range(config.num_hidden_layers)])
+        # self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        #
+        # self.gradient_checkpointing = False
+        # # Initialize weights and apply final processing
+        # self.post_init()
 
     def get_input_embeddings(self):
         return self.embed_tokens
@@ -100,11 +100,6 @@ class UnmaskingLlamaModel(LlamaPreTrainedModel):
 
         if inputs_embeds is None:
             inputs_embeds = self.embed_tokens(input_ids)
-        # embed positions
-        if attention_mask is None:
-            attention_mask = torch.ones(
-                (batch_size, seq_length_with_past), dtype=torch.bool, device=inputs_embeds.device
-            )
         # causal mask
         '''
         attention_mask = self._prepare_decoder_attention_mask(
@@ -219,6 +214,6 @@ def _expand_mask(mask: torch.Tensor, dtype: torch.dtype, tgt_len: Optional[int] 
 class UnMaskedMplugOwlForTokenClassification(MplugOwlForTokenClassification):
     def __init__(self, config: MplugOwlConfig, weight_loss, weight_flag):
         super(UnMaskedMplugOwlForTokenClassification, self).__init__(config, weight_loss, weight_flag)
-        language_model = UnmaskingLlamaModel(config.text_config)
+        language_model = UnmaskingLlamaModel.from_pretrained(config._name_or_path)
         self.language_model = language_model
 

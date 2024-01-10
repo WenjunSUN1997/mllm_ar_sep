@@ -16,6 +16,8 @@ def train(config):
         dataloader_train = get_dataloader(config)
         config['goal'] = 'test'
         dataloader_test = get_dataloader(config)
+        print(torch.cuda.current_device())
+        print('init the model')
         if config['type'] == 'unmasked':
             model = UnMaskedMplugOwlForTokenClassification.from_pretrained(
                 config['model_name'],
@@ -31,6 +33,8 @@ def train(config):
                 weight_flag=config['weight'])
 
     model.to(config['device'])
+    print('model inited')
+    print(model.device)
     for name, param in model.named_parameters():
         if 'vision_model' in name:
             # 默认vision不训练
@@ -76,7 +80,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=2, type=int)
     parser.add_argument("--max_token_num", default=1024, type=int)
     parser.add_argument("--half", default=True, type=bool)
-    parser.add_argument("--lr", default=1e-5, type=float)
+    parser.add_argument("--lr", default=1e-4, type=float)
     parser.add_argument("--weight", default=True, type=bool)
     parser.add_argument("--sim_dim", default=4096, type=int)
     parser.add_argument("--model_name", default='MAGAer13/mplug-owl-llama-7b')
